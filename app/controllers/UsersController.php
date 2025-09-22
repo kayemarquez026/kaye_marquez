@@ -70,8 +70,8 @@ class UsersController extends Controller {
     }
 
     function update($id){
-        $user = $this->UsersModel->find($id);
-        if(!$user){
+        $users = $this->UsersModel->find($id);
+        if(!$users){
             echo "User not found.";
             return;
         }
@@ -93,7 +93,7 @@ class UsersController extends Controller {
                 echo "Error in updating user.";
             }
         }else{
-            $data['user'] = $user;
+            $data['users'] = $users;
             $this->call->view('users/update', $data);
         }
     }
