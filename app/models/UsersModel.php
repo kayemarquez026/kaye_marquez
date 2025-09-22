@@ -1,13 +1,8 @@
 <?php
 defined('PREVENT_DIRECT_ACCESS') OR exit('No direct script access allowed');
 
-/**
- * Model: UsersModel
- * 
- * Automatically generated via CLI.
- */
 class UsersModel extends Model {
-    protected $table = 'information';
+    protected $table = 'users'; // your actual DB table
     protected $primary_key = 'id';
 
     public function __construct()
@@ -15,11 +10,11 @@ class UsersModel extends Model {
         parent::__construct();
     }
 
-        public function page($q = '', $records_per_page = null, $page = null)
+    // Pagination + search
+    public function page($q = '', $records_per_page = null, $page = null)
     {
         $query = $this->db->table($this->table);
 
-        // Apply search filters if $q is not empty
         if (!empty($q)) {
             $query->like('id', '%'.$q.'%')
                   ->or_like('first_name', '%'.$q.'%')
@@ -27,22 +22,54 @@ class UsersModel extends Model {
                   ->or_like('email', '%'.$q.'%');
         }
 
-        // If no pagination requested, return all records
-        if (is_null($page)) {
-            return [
-                'total_rows' => $query->select_count('*', 'count')->get()['count'],
-                'records'    => $query->get_all()
-            ];
+        // Count total rows
+        $countQuery = clone $query;
+        $total_rows = $countQuery->select_count('*', 'count')->get()['count'];
+
+        // Pagination
+        if ($page !== null && $records_per_page !== null) {
+            $query->pagination($records_per_page, $page);
         }
 
-        // Clone query for counting total rows
-        $countQuery = clone $query;
-        $data['total_rows'] = $countQuery->select_count('*', 'count')->get()['count'];
+        $records = $query->get_all();
 
-        // Apply pagination
-        $data['records'] = $query->pagination($records_per_page, $page)->get_all();
-
-        return $data;
+        return [
+            'total_rows' => $total_rows,
+            'records'    => $records
+        ];
     }
-    
+
+    // Match parent signature
+    public function find($id, $with_deleted = false)
+    {
+        $query = $this->db->table($this->table)->where($this->primary_key, $id);
+
+        if (!$with_deleted && property_exists($this, 'deleted_at')) {
+            $query->where('deleted_at', null);
+        }
+
+        return $query->get();
+    }
+
+    // Insert new user
+    public function insert($data)
+    {
+        return $this->db->table($this->table)->insert($data);
+    }
+
+    // Update user
+    public function update($id, $data)
+    {
+        return $this->db->table($this->table)
+                        ->where($this->primary_key, $id)
+                        ->update($data);
+    }
+
+    // Delete user
+    public function delete($id)
+    {
+        return $this->db->table($this->table)
+                        ->where($this->primary_key, $id)
+                        ->delete();
+    }
 }
